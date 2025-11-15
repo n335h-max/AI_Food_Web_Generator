@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Food Web Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.2/dist/vis-network.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/vis-network@9.1.2/dist/vis-network.min.css" rel="stylesheet" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 1200px;
+      width: 100%;
+      padding: 40px;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 1.1em;
+    }
+
+    .input-section {
+      background: #f8f9fa;
+      padding: 25px;
+      border-radius: 15px;
+      margin-bottom: 30px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    input {
+      flex: 1;
+      min-width: 250px;
+      padding: 15px 20px;
+      font-size: 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      transition: all 0.3s;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    button {
+      padding: 15px 30px;
+      font-size: 16px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .examples {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .example-btn {
+      padding: 8px 16px;
+      font-size: 14px;
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .example-btn:hover {
+      background: #667eea;
+      color: white;
+      transform: scale(1.05);
+    }
+
+    #network {
+      width: 100%;
+      height: 600px;
+      border: 2px solid #e0e0e0;
+      border-radius: 15px;
+      background: #fafafa;
+      position: relative;
+    }
+
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 10;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error {
+      background: #fee;
+      color: #c33;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      border-left: 4px solid #c33;
+      display: none;
+    }
+
+    .info {
+      background: #e3f2fd;
+      color: #1976d2;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+      border-left: 4px solid #1976d2;
+      font-size: 14px;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .legend-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #555;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 20px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2em;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .stat-label {
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 2em;
+      }
+
+      .input-group {
+        flex-direction: column;
+      }
+
+      input {
+        min-width: 100%;
+      }
+
+      #network {
+        height: 400px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🕸️ AI Food Web Generator</h1>
+    <p class="subtitle">Discover ecological relationships powered by AI</p>
+
+    <div class="error" id="error"></div>
+
+    <div class="input-section">
+      <div class="input-group">
+        <input
+          id="animals"
+          type="text"
+          placeholder="Enter organisms (e.g., grass, rabbit, fox, hawk)"
+          autocomplete="off"
+          onkeypress="if(event.key==='Enter') generate()"
+        />
+        <button onclick="generate()" id="generateBtn">
+          Generate Food Web
+        </button>
+      </div>
+
+      <p style="text-align: center; margin: 15px 0 10px; color: #666; font-size: 14px;">
+        Try these examples:
+      </p>
+      <div class="examples">
+        <button class="example-btn" onclick="loadExample('grass, grasshopper, frog, snake, hawk')">
+          Simple Chain
+        </button>
+        <button class="example-btn" onclick="loadExample('algae, zooplankton, small fish, large fish, shark')">
+          Marine Web
+        </button>
+        <button class="example-btn" onclick="loadExample('grass, deer, rabbit, fox, wolf, bear')">
+          Forest Ecosystem
+        </button>
+        <button class="example-btn" onclick="loadExample('phytoplankton, krill, penguin, seal, orca')">
+          Antarctic Web
+        </button>
+      </div>
+    </div>
+
+    <div id="stats" class="stats" style="display: none;">
+      <div class="stat">
+        <div class="stat-value" id="nodeCount">0</div>
+        <div class="stat-label">Organisms</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="edgeCount">0</div>
+        <div class="stat-label">Connections</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="levelCount">0</div>
+        <div class="stat-label">Trophic Levels</div>
+      </div>
+    </div>
+
+    <div id="network">
+      <div class="loading" id="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p style="color: #667eea; font-weight: 600;">Generating food web...</p>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #4caf50;"></div>
+        <span>Producer</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #2196f3;"></div>
+        <span>Herbivore</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #ff9800;"></div>
+        <span>Carnivore</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background: #f44336;"></div>
+        <span>Apex Predator</span>
+      </div>
+    </div>
+
+    <div class="info">
+      <strong>💡 How it works:</strong> Enter organisms separated by commas. The AI will analyze their ecological relationships and create a realistic food web showing who eats whom. Arrows point from prey to predator.
+    </div>
+  </div>
+
+  <script>
+    let network = null;
+
+    function loadExample(text) {
+      document.getElementById("animals").value = text;
+      generate();
+    }
+
+    function showError(message) {
+      const errorEl = document.getElementById("error");
+      errorEl.textContent = message;
+      errorEl.style.display = "block";
+      setTimeout(() => {
+        errorEl.style.display = "none";
+      }, 5000);
+    }
+
+    function updateStats(nodes, edges) {
+      const levels = calculateTrophicLevels(nodes, edges);
+      document.getElementById("nodeCount").textContent = nodes.length;
+      document.getElementById("edgeCount").textContent = edges.length;
+      document.getElementById("levelCount").textContent = levels;
+      document.getElementById("stats").style.display = "flex";
+    }
+
+    function calculateTrophicLevels(nodes, edges) {
+      const levels = {};
+      const hasIncoming = new Set();
+
+      edges.forEach(e => hasIncoming.add(e.to));
+
+      nodes.forEach(n => {
+        if (!hasIncoming.has(n.id)) {
+          levels[n.id] = 1;
+        }
+      });
+
+      let changed = true;
+      while (changed) {
+        changed = false;
+        edges.forEach(e => {
+          if (levels[e.from] && (!levels[e.to] || levels[e.to] <= levels[e.from])) {
+            levels[e.to] = levels[e.from] + 1;
+            changed = true;
+          }
+        });
+      }
+
+      return Math.max(...Object.values(levels));
+    }
+
+    function getNodeColor(nodeId, edges) {
+      const incoming = edges.filter(e => e.to === nodeId).length;
+      const outgoing = edges.filter(e => e.from === nodeId).length;
+
+      if (incoming === 0) return { background: "#4caf50", border: "#2e7d32" };
+      if (outgoing === 0) return { background: "#f44336", border: "#c62828" };
+      if (incoming > outgoing) return { background: "#ff9800", border: "#e65100" };
+      return { background: "#2196f3", border: "#1565c0" };
+    }
+
+    async function generate() {
+      const input = document.getElementById("animals").value;
+      const animals = input.split(",").map(a => a.trim()).filter(a => a);
+
+      if (animals.length === 0) {
+        showError("Please enter at least one organism!");
+        return;
+      }
+
+      // Clear existing network
+      if (network) {
+        network.destroy();
+        network = null;
+      }
+
+      const loadingEl = document.getElementById("loading");
+      const generateBtn = document.getElementById("generateBtn");
+
+      loadingEl.style.display = "block";
+      generateBtn.disabled = true;
+      generateBtn.textContent = "Generating...";
+      document.getElementById("stats").style.display = "none";
+
+      try {
+        // Use relative URL for Replit compatibility
+        const apiUrl = window.location.origin + "/generate";
+
+        const res = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ animals }),
+        });
+
+        if (!res.ok) {
+          throw new Error(`Server error: ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        drawNetwork(data);
+      } catch (err) {
+        console.error("Error:", err);
+        showError(`Failed to generate food web: ${err.message}`);
+      } finally {
+        loadingEl.style.display = "none";
+        generateBtn.disabled = false;
+        generateBtn.textContent = "Generate Food Web";
+      }
+    }
+
+    function drawNetwork(data) {
+      // Destroy existing network completely
+      if (network) {
+        network.destroy();
+        network = null;
+      }
+
+      const nodes = data.nodes.map(n => ({
+        id: n,
+        label: n.charAt(0).toUpperCase() + n.slice(1),
+        font: { size: 16, color: "#333", bold: true },
+        shadow: true
+      }));
+
+      const edges = data.edges.map(e => ({
+        from: e.from,
+        to: e.to,
+        arrows: { to: { enabled: true, scaleFactor: 1.2 } },
+        smooth: { type: "curvedCW", roundness: 0.2 }
+      }));
+
+      nodes.forEach(node => {
+        const color = getNodeColor(node.id, edges);
+        node.color = color;
+        node.size = 25;
+      });
+
+      updateStats(nodes, edges);
+
+      const container = document.getElementById("network");
+
+      // Clear container content to remove any remnants
+      container.innerHTML = '';
+
+      const networkData = { nodes, edges };
+      const options = {
+        nodes: {
+          shape: "dot",
+          borderWidth: 3,
+        },
+        edges: {
+          color: { color: "#888", highlight: "#667eea" },
+          width: 2,
+          hoverWidth: 3
+        },
+        physics: {
+          stabilization: { iterations: 200 },
+          barnesHut: {
+            gravitationalConstant: -3000,
+            springLength: 150,
+            springConstant: 0.04
+          }
+        },
+        interaction: {
+          hover: true,
+          tooltipDelay: 200,
+          zoomView: true
+        },
+        layout: {
+          improvedLayout: true
+        }
+      };
+
+      network = new vis.Network(container, networkData, options);
+
+      network.on("stabilizationIterationsDone", function () {
+        network.setOptions({ physics: false });
+      });
+    }
+
+    document.getElementById("animals").focus();
+  </script>
+</body>
+</html>

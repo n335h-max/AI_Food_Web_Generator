@@ -1,25 +1,5 @@
-import fetch from "node-fetch";
-
+// Vercel Serverless Function - No imports needed
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-
-// Simple rate limiting with memory
-const requestCounts = new Map();
-const RATE_LIMIT = 10;
-const RATE_WINDOW = 60000;
-
-function checkRateLimit(ip) {
-  const now = Date.now();
-  const userRequests = requestCounts.get(ip) || [];
-  const recentRequests = userRequests.filter(time => now - time < RATE_WINDOW);
-  
-  if (recentRequests.length >= RATE_LIMIT) {
-    return false;
-  }
-  
-  recentRequests.push(now);
-  requestCounts.set(ip, recentRequests);
-  return true;
-}
 
 export default async function handler(req, res) {
   // CORS headers
@@ -38,13 +18,6 @@ export default async function handler(req, res) {
   }
 
   const { animals } = req.body;
-  const clientIp = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || 'unknown';
-
-  if (!checkRateLimit(clientIp)) {
-    return res.status(429).json({ 
-      error: "Too many requests. Please wait a moment before trying again." 
-    });
-  }
 
   if (!animals || !Array.isArray(animals) || animals.length === 0) {
     return res.status(400).json({ error: "Please provide at least one organism" });
@@ -97,9 +70,6 @@ Example for [grass, rabbit, fox]:
 
 Now create the food web:`;
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25000);
-
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -113,11 +83,8 @@ Now create the food web:`;
         messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
         max_tokens: 2000
-      }),
-      signal: controller.signal
+      })
     });
-
-    clearTimeout(timeout);
 
     if (!response.ok) {
       throw new Error(`OpenRouter API error: ${response.status}`);
@@ -162,22 +129,14 @@ Now create the food web:`;
       edges: validEdges
     };
 
-    console.log(`✅ Generated food web with ${finalWeb.nodes.length} nodes and ${finalWeb.edges.length} edges`);
     res.status(200).json(finalWeb);
 
   } catch (err) {
     console.error("❌ Error:", err.message);
     
-    if (err.name === 'AbortError') {
-      return res.status(504).json({ error: "Request timeout - please try again" });
-    }
-    
-    if (err instanceof SyntaxError) {
-      return res.status(500).json({ error: "Failed to parse AI response - please try again" });
-    }
-
     res.status(500).json({ 
-      error: "Failed to generate food web. Please try again with different organisms." 
+      error: "Failed to generate food web. Please try again.",
+      details: err.message
     });
   }
 }

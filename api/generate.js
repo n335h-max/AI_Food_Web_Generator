@@ -29,18 +29,39 @@ export default async function handler(req, res) {
   }
 
   try {
-    const prompt = `Create a realistic food web JSON for these organisms: ${sanitizedAnimals.join(", ")}
+    const prompt = `You are an expert ecologist and biologist. Create a scientifically accurate and realistic food web based on these organisms: ${sanitizedAnimals.join(", ")}
 
-Rules:
-- Use ONLY these organisms
-- Arrows from prey to predator
-- Output ONLY valid JSON
+CRITICAL REQUIREMENTS:
+1. Use ONLY the organisms listed above - do not add any extras
+2. Base relationships on real ecological science and biology
+3. Arrows point FROM prey TO predator (direction of energy flow)
+4. Include all trophic levels: producers → primary consumers → secondary consumers → tertiary consumers → apex predators
+5. If any organism is omnivorous, show multiple feeding relationships
+6. Ensure the web is connected - every organism should have at least one connection
+7. Consider realistic predator-prey relationships based on size, habitat, and diet
+8. Output ONLY valid JSON with absolutely no markdown, explanations, or extra text
 
-Format:
+Response format (THIS IS THE ONLY ACCEPTABLE OUTPUT):
 {
-  "nodes": ["organism1", "organism2"],
-  "edges": [{"from": "prey", "to": "predator"}]
-}`;
+  "nodes": ["organism1", "organism2", "organism3"],
+  "edges": [
+    {"from": "prey_species", "to": "predator_species"},
+    {"from": "another_prey", "to": "another_predator"}
+  ]
+}
+
+Example for [grass, rabbit, fox, hawk]:
+{
+  "nodes": ["grass", "rabbit", "fox", "hawk"],
+  "edges": [
+    {"from": "grass", "to": "rabbit"},
+    {"from": "rabbit", "to": "fox"},
+    {"from": "rabbit", "to": "hawk"},
+    {"from": "fox", "to": "hawk"}
+  ]
+}
+
+Now generate the food web with scientific accuracy:`;
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",

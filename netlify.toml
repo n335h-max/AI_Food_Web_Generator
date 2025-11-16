@@ -1,0 +1,14 @@
+[build]
+  command = "npm install"
+  functions = "api"
+  publish = "."
+
+[[redirects]]
+  from = "/generate"
+  to = "/.netlify/functions/generate"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

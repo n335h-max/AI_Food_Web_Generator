@@ -57,6 +57,9 @@ CRITICAL REQUIREMENTS:
    - Documented diet (use real biological evidence)
    - Hunting capability (consider strength, speed, hunting methods)
 
+ADDITIONAL RULE:
+- Large apex predators of similar size (bears, wolves, lions, tigers) are competitors, NOT predator-prey. They should have NO arrows between them.
+
 IMPORTANT ECOLOGICAL RULES TO FOLLOW:
 - Apex predators (like bears, wolves, lions) are NOT prey to other apex predators
 - Competitors (bears vs wolves, lions vs hyenas) do NOT eat each other

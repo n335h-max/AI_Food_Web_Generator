@@ -1,21 +1,35 @@
-export default async function handler(req, res) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
+export default async function handler(req) {
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return new Response(null, { 
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      }
+    });
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
   }
 
-  const { animals } = req.body;
+  const { animals } = await req.json();
 
   if (!animals || !Array.isArray(animals) || animals.length === 0) {
-    return res.status(400).json({ error: "Please provide at least one organism" });
+    return new Response(JSON.stringify({ error: "Please provide at least one organism" }), {
+      status: 400,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
   }
 
   const sanitizedAnimals = animals
@@ -25,7 +39,13 @@ export default async function handler(req, res) {
     .slice(0, 20);
 
   if (sanitizedAnimals.length === 0) {
-    return res.status(400).json({ error: "No valid organisms provided" });
+    return new Response(JSON.stringify({ error: "No valid organisms provided" }), {
+      status: 400,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
   }
 
   try {
@@ -93,16 +113,28 @@ Now generate the food web with scientific accuracy:`;
       e.from && e.to && nodeSet.has(e.from) && nodeSet.has(e.to)
     );
 
-    return res.status(200).json({
+    return new Response(JSON.stringify({
       nodes: foodWeb.nodes,
       edges: validEdges
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
 
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ 
+    return new Response(JSON.stringify({ 
       error: "Failed to generate food web",
       details: err.message 
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
   }
 }

@@ -1,34 +1,47 @@
-export default async function handler(req, res) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+export default async (req) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json'
+  };
 
+  // Handle OPTIONS request
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return new Response(null, { status: 200, headers });
   }
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { animals } = req.body;
-
-  if (!animals || !Array.isArray(animals) || animals.length === 0) {
-    return res.status(400).json({ error: "Please provide at least one organism" });
-  }
-
-  const sanitizedAnimals = animals
-    .filter(a => typeof a === 'string')
-    .map(a => a.trim().toLowerCase())
-    .filter(a => a.length > 0)
-    .slice(0, 20);
-
-  if (sanitizedAnimals.length === 0) {
-    return res.status(400).json({ error: "No valid organisms provided" });
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }), 
+      { status: 405, headers }
+    );
   }
 
   try {
+    const body = await req.json();
+    const { animals } = body;
+
+    if (!animals || !Array.isArray(animals) || animals.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Please provide at least one organism" }), 
+        { status: 400, headers }
+      );
+    }
+
+    const sanitizedAnimals = animals
+      .filter(a => typeof a === 'string')
+      .map(a => a.trim().toLowerCase())
+      .filter(a => a.length > 0)
+      .slice(0, 20);
+
+    if (sanitizedAnimals.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "No valid organisms provided" }), 
+        { status: 400, headers }
+      );
+    }
+
     const prompt = `You are an expert ecologist and biologist. Create a scientifically accurate and realistic food web based on these organisms: ${sanitizedAnimals.join(", ")}
 
 CRITICAL REQUIREMENTS:
@@ -81,37 +94,40 @@ Now generate the food web with scientific accuracy:`;
             content: prompt
           }
         ],
-        temperature: 0.3,  // ⭐ Changed from 0.7 to 0.3 for more consistent accuracy
-        max_tokens: 3000   // ⭐ Changed from 2000 to 3000 for complex webs
+        temperature: 0.3,
+        max_tokens: 3000
       })
     });
 
     const data = await response.json();
     let content = data.choices[0].message.content.trim();
     
-    // Clean markdown
     content = content.replace(/```json|```/g, '').trim();
     
-    // Extract JSON
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     const foodWeb = JSON.parse(jsonMatch[0]);
 
-    // Validate
     const nodeSet = new Set(foodWeb.nodes);
     const validEdges = foodWeb.edges.filter(e => 
       e.from && e.to && nodeSet.has(e.from) && nodeSet.has(e.to)
     );
 
-    return res.status(200).json({
-      nodes: foodWeb.nodes,
-      edges: validEdges
-    });
+    return new Response(
+      JSON.stringify({
+        nodes: foodWeb.nodes,
+        edges: validEdges
+      }), 
+      { status: 200, headers }
+    );
 
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ 
-      error: "Failed to generate food web",
-      details: err.message 
-    });
+    return new Response(
+      JSON.stringify({ 
+        error: "Failed to generate food web",
+        details: err.message 
+      }), 
+      { status: 500, headers }
+    );
   }
-}
+};

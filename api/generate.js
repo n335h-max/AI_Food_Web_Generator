@@ -71,9 +71,18 @@ Now generate the food web with scientific accuracy:`;
       },
       body: JSON.stringify({
         model: "openai/gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 2000
+        messages: [
+          {
+            role: "system",
+            content: "You are an expert ecologist who creates scientifically accurate food webs. Always output valid JSON only."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.3,  // ⭐ Changed from 0.7 to 0.3 for more consistent accuracy
+        max_tokens: 3000   // ⭐ Changed from 2000 to 3000 for complex webs
       })
     });
 

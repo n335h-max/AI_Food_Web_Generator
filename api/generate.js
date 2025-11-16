@@ -46,13 +46,26 @@ export default async (req) => {
 
 CRITICAL REQUIREMENTS:
 1. Use ONLY the organisms listed above - do not add any extras
-2. Base relationships on real ecological science and biology
+2. Base ALL relationships on real ecological science and documented predator-prey interactions
 3. Arrows point FROM prey TO predator (direction of energy flow)
 4. Include all trophic levels: producers → primary consumers → secondary consumers → tertiary consumers → apex predators
 5. If any organism is omnivorous, show multiple feeding relationships
 6. Ensure the web is connected - every organism should have at least one connection
-7. Consider realistic predator-prey relationships based on size, habitat, and diet
-8. Output ONLY valid JSON with absolutely no markdown, explanations, or extra text
+7. Consider realistic predator-prey relationships based on:
+   - Body size (predators must be capable of hunting/killing prey)
+   - Natural habitat overlap (species must coexist in same ecosystems)
+   - Documented diet (use real biological evidence)
+   - Hunting capability (consider strength, speed, hunting methods)
+
+IMPORTANT ECOLOGICAL RULES TO FOLLOW:
+- Apex predators (like bears, wolves, lions) are NOT prey to other apex predators
+- Competitors (bears vs wolves, lions vs hyenas) do NOT eat each other
+- Small predators (foxes, cats) cannot hunt large prey (deer, elk) - only young/weak ones
+- Herbivores only eat plants, carnivores only eat meat, omnivores eat both
+- Birds of prey can hunt smaller mammals and birds
+- Aquatic organisms stay in aquatic food chains
+
+Output ONLY valid JSON with absolutely no markdown, explanations, or extra text.
 
 Response format (THIS IS THE ONLY ACCEPTABLE OUTPUT):
 {
@@ -74,7 +87,7 @@ Example for [grass, rabbit, fox, hawk]:
   ]
 }
 
-Now generate the food web with scientific accuracy:`;
+Now generate the food web with strict scientific accuracy:`;
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -87,14 +100,14 @@ Now generate the food web with scientific accuracy:`;
         messages: [
           {
             role: "system",
-            content: "You are an expert ecologist who creates scientifically accurate food webs. Always output valid JSON only."
+            content: "You are a professional ecologist with expertise in trophic interactions and food web dynamics. You create scientifically accurate food webs based on documented predator-prey relationships in nature. You never create fictional or impossible relationships. Always output valid JSON only, with no additional text or markdown."
           },
           {
             role: "user",
             content: prompt
           }
         ],
-        temperature: 0.3,
+        temperature: 0.2,  // ⭐ CHANGED from 0.3 to 0.2 for even more accuracy
         max_tokens: 3000
       })
     });

@@ -8,13 +8,13 @@
     "express": "^4.21.2",
     "node-fetch": "^3.3.2"
   },
-  "description": "",
-  "main": "script.js",
+  "description": "Generate ecology-inspired food webs with a validated AI response.",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test",
     "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "keywords": ["ecology", "food-web", "ai"],
+  "author": "n335h-max",
+  "license": "MIT"
 }
